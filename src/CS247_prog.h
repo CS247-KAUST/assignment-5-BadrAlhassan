@@ -10,6 +10,9 @@
 #include <cassert>
 #include <vector>
 #include <cmath>
+#include <utility>
+#include <tuple>
+#include <algorithm>
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -103,8 +106,28 @@ void reset_rendering_props( void );
 // TODO: define data arrays, VAO and VBO
 // Hint: you need one for the glyphs, streamlines, pathlines
 
+// Streamline / Pathline seeds & data storage
+struct StreamlineData { std::vector<glm::vec2> points; int method; };
+struct PathlineData { std::vector<glm::vec2> points; int method; };
+struct SLSeed { int x, y, method; };
+struct PLSeed { int x, y, t, method; };
+std::vector<SLSeed> streamline_seeds;
+std::vector<PLSeed> pathline_seeds;
+std::vector<StreamlineData> streamlines;
+std::vector<PathlineData> pathlines;
+
+// VAO/VBO handles for overlays
+GLuint glyph_VAO, glyph_VBO;
+GLuint streamline_VAO, streamline_VBO;
+GLuint pathline_VAO, pathline_VBO;
+
 // TODO: define colormap variables
 // Hint: you need a colormap mode (off/rainbow/cool-warm) and a blend factor
+int colormap_mode;
+float blend_factor;
+int integration_method;    // 0=Euler, 1=RK2, 2=RK4
+int arrow_length_mode;     // 0=constant, 1=speed-proportional
+int rake_mode;             // 0=off, 1=horizontal, 2=vertical
 
 // make quad to load texture to
 VBOQuad quad;

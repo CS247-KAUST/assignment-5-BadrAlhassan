@@ -69,3 +69,67 @@ Streamlines
 Pathlines
 
 ![pathlines.png](https://bitbucket.org/repo/Mq6ygx/images/3862458026-pathlines.png)
+
+---
+
+# Implementation Report
+
+## Build Instructions
+
+Configure and build with CMake, then run:
+
+```powershell
+cmake -B build
+cmake --build build
+.\build\assignment_5B.exe
+```
+
+The application loads the `block` dataset by default. Keys `1` (block), `2` (tube), and `3` (hurricane) switch datasets. Place data files in `data/block/`, `data/tube/`, `data/hurricane/`.
+
+## Implementation Summary
+
+### Glyph Visualization
+Arrow glyphs indicate vector direction at each grid point, drawn as a line shaft with two triangle lines forming the arrowhead. The `L` key toggles between constant-length arrows and speed-proportional arrows (length scaled by the ratio of local speed to global maximum speed). The `+`/`-` keys adjust the grid sampling rate, controlling glyph density.
+
+### Streamlines
+Streamlines are computed via `integratePts()`, which supports Euler (`method == 0`) and RK2 (`method == 1`) integration. Integration proceeds both forward and backward from the seed point. Bilinear interpolation (`getVectorBilinear()`) samples the vector field at fractional positions rather than snapping to the nearest grid vertex. Stopping conditions include: accumulated path length exceeding a threshold (500 units), vector magnitude below `1e-6` (zero vector), and reaching the data boundary. Seeds are stored in a persistent `streamline_seeds` vector so previously placed streamlines remain when new ones are added. When the timestep changes, `loadNextTimestep()` recalculates all streamlines from their stored seeds while preserving each seed's original integration method.
+
+### Pathlines
+Pathlines follow the same integration logic as streamlines but use `getVectorTrilinear()` for trilinear interpolation across both space and time, allowing the seed's starting time to advance during integration. Stopping conditions are identical to streamlines (path length, zero vector, boundary) with an additional timestep boundary check. Seeds persist independently and are only removed when pressing `X`.
+
+### Color-Coded Scalar Field
+The background scalar field is loaded as a grayscale texture and colored in the fragment shader using two colormaps: a multi-stop rainbow (blue, cyan, green, yellow, red) and a blue-white-red cool-warm scheme. The `C` key cycles through off/rainbow/cool-warm modes. The `V`/`N` keys adjust a blend factor.
+
+### Adjustable dt
+The `I`/`K` keys increase/decrease the integration time step `dt` (range 0.0001–1.0). Any change to `dt` triggers an automatic recomputation of all existing streamlines and pathlines using their stored seed positions and methods.
+
+### RK4 Integration (Bonus)
+The `integratePts()` function was extended with the classical fourth-order Runge-Kutta method (`method == 2`) for both streamlines and pathlines. The `R` key now cycles through three methods: Euler (yellow), RK2 (cyan), and RK4 (magenta).
+
+### Rake Seeding (Bonus)
+Pressing `G` cycles rake mode off → horizontal → vertical. When active, a left-click seeds 10 streamlines along a rake line instead of a single point. Each seed preserves its integration method across timestep changes.
+
+### Switch Scalar Fields (Bonus)
+The `S` key cycles between available scalar fields (pressure/vorticity for block, temperature/cloud moisture for hurricane).
+
+## Keyboard Shortcuts
+
+| Key | Action |
+|-----|--------|
+| `1`/`2`/`3` | Load block/tube/hurricane dataset |
+| `0` | Cycle timestep |
+| `A` | Toggle glyph arrows |
+| `T` | Toggle streamlines |
+| `P` | Toggle pathlines |
+| `+`/`-` | Increase/decrease sampling rate |
+| `I`/`K` | Increase/decrease dt |
+| `L` | Toggle arrow length (constant ↔ speed) |
+| `C` | Cycle colormap (off → rainbow → cool-warm) |
+| `V`/`N` | Increase/decrease blend factor |
+| `R` | Cycle integration (Euler → RK2 → RK4 (Bonus)) |
+| `G` | Cycle rake mode (off → horizontal → vertical). Bonus |
+| `S` | Switch scalar field. Bonus| 
+| `X` | Clear all seeds |
+| `B` | Cycle background color |
+| `Q`/`Esc` | Quit |
+| **Left click** | Seed streamline and/or pathline at cursor; with rake mode, seeds multiple streamlines
